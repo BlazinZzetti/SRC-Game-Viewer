@@ -33,6 +33,8 @@ namespace SRCTest
             this.srcSearchTextBox = new System.Windows.Forms.TextBox();
             this.label1 = new System.Windows.Forms.Label();
             this.SearchSRCButton = new System.Windows.Forms.Button();
+            this.includeRejectedCheckBox = new System.Windows.Forms.CheckBox();
+            this.includeNewCheckBox = new System.Windows.Forms.CheckBox();
             this.SuspendLayout();
             // 
             // treeView1
@@ -49,6 +51,7 @@ namespace SRCTest
             this.srcSearchTextBox.Name = "srcSearchTextBox";
             this.srcSearchTextBox.Size = new System.Drawing.Size(263, 20);
             this.srcSearchTextBox.TabIndex = 1;
+            this.srcSearchTextBox.Text = "Shadow the Hedgehog";
             // 
             // label1
             // 
@@ -70,17 +73,39 @@ namespace SRCTest
             this.SearchSRCButton.UseVisualStyleBackColor = true;
             this.SearchSRCButton.Click += new System.EventHandler(this.SearchSRCButton_Click);
             // 
+            // includeRejectedCheckBox
+            // 
+            this.includeRejectedCheckBox.AutoSize = true;
+            this.includeRejectedCheckBox.Location = new System.Drawing.Point(406, 12);
+            this.includeRejectedCheckBox.Name = "includeRejectedCheckBox";
+            this.includeRejectedCheckBox.Size = new System.Drawing.Size(135, 17);
+            this.includeRejectedCheckBox.TabIndex = 4;
+            this.includeRejectedCheckBox.Text = "Include Rejected Runs";
+            this.includeRejectedCheckBox.UseVisualStyleBackColor = true;
+            // 
+            // includeNewCheckBox
+            // 
+            this.includeNewCheckBox.AutoSize = true;
+            this.includeNewCheckBox.Location = new System.Drawing.Point(547, 12);
+            this.includeNewCheckBox.Name = "includeNewCheckBox";
+            this.includeNewCheckBox.Size = new System.Drawing.Size(171, 17);
+            this.includeNewCheckBox.TabIndex = 5;
+            this.includeNewCheckBox.Text = "Include Unvarified (New) Runs";
+            this.includeNewCheckBox.UseVisualStyleBackColor = true;
+            // 
             // Form1
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(800, 450);
+            this.Controls.Add(this.includeNewCheckBox);
+            this.Controls.Add(this.includeRejectedCheckBox);
             this.Controls.Add(this.SearchSRCButton);
             this.Controls.Add(this.label1);
             this.Controls.Add(this.srcSearchTextBox);
             this.Controls.Add(this.treeView1);
             this.Name = "Form1";
-            this.Text = "Form1";
+            this.Text = "SRC Game Viewer";
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -92,6 +117,8 @@ namespace SRCTest
         private System.Windows.Forms.TextBox srcSearchTextBox;
         private System.Windows.Forms.Label label1;
         private System.Windows.Forms.Button SearchSRCButton;
+        private System.Windows.Forms.CheckBox includeRejectedCheckBox;
+        private System.Windows.Forms.CheckBox includeNewCheckBox;
     }
 }
 

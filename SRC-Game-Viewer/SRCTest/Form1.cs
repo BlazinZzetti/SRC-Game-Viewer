@@ -9,6 +9,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using SpeedrunComSharp;
+using System.Linq;
 
 namespace SRCTest
 {
@@ -30,105 +31,156 @@ namespace SRCTest
         {
             int runCount = 0;
             treeView1.Nodes.Clear();
-            TreeNode gameNode = CreateNodeHelper(v);
-            treeView1.Nodes.Add(gameNode);
+
             //Creating the Client
             var client = new SpeedrunComClient();
 
             //Searching for a game called "Wind Waker"
             var game = client.Games.SearchGame(name: v);
 
+            TreeNode gameNode = CreateNodeHelper(game.Name);
+            treeView1.Nodes.Add(gameNode);
+
             var mainCategoryNode = CreateNodeHelper("Categories");
+            var mainLevelsNode = CreateNodeHelper("Levels");
             //Printing all the categories of the game
             foreach (var category in game.Categories)
             {
                 var categoryNode = CreateNodeHelper(category.Name);
 
                 Console.WriteLine(category.Name);
-                foreach (var variables in category.Variables)
+
+                foreach (var run in category.Runs)
                 {
-                    var variableNode = new TreeNode(variables.Name);
-                    Console.WriteLine("-" + variables.Name);
-                    foreach (var value in variables.Values)
+                    if ((run.Status.Type == RunStatusType.Verified)
+                    || (run.Status.Type == RunStatusType.New && includeNewCheckBox.Checked)
+                    || (run.Status.Type == RunStatusType.Rejected && includeRejectedCheckBox.Checked))
                     {
-                        var valueNode = CreateNodeHelper(value.Value);
-                        Console.WriteLine("- -" + value.Value);
-                        variableNode.Nodes.Add(valueNode);
-                    }
-                    categoryNode.Nodes.Add(variableNode);
-                }
-
-                var mainRunsNode = CreateNodeHelper("Runs");
-                var mainLevelNode = CreateNodeHelper("Levels");
-                var levelList = new List<string>();
-
-                foreach(var run in category.Runs)
-                {
-                    var runVariables = new List<KeyValuePair<string, string>>();
-                    foreach (var variableValue in run.VariableValues)
-                    {
-                        runVariables.Add(new KeyValuePair<string, string>(variableValue.Name, variableValue.Value));
-                    }
-
-                    var mainTime = run.Times.Primary.ToString();
-                    var player = run.Player.Name;
-                    var runNode = new TreeNode(mainTime + " by " + player);
-                    var webLinkNode = CreateNodeHelper(run.WebLink.ToString());
-                    webLinkNode.Tag = "WebLink";
-
-                    runNode.Nodes.Add(webLinkNode);
-                    runCount++;
-
-                    var level = run.Level;
-                    var levelNode = new TreeNode();
-                    if (level != null)
-                    {
-                        if (!levelList.Contains(level.Name))
+                        if (run.Level != null)
                         {
-                            levelList.Add(level.Name);
-                            levelNode.Text = level.Name;
-                            levelNode.Name = level.Name;
-                            mainLevelNode.Nodes.Add(levelNode);
-                        }
+                            ManageLevelRun(mainLevelsNode, run);
+                            runCount++;
+                        } //if level is null, probably not an IL
                         else
                         {
-                            levelNode = mainLevelNode.Nodes.Find(level.Name, false)[0];
+                            ManageCategoryRun(run, categoryNode);
+                            runCount++;
                         }
-                        levelNode.Nodes.Add(runNode);
-                    } //if level is null, probably not an IL
-                    else
-                    {
-                        if (runVariables.Count > 0)
-                        {
-                            var varNode = categoryNode.Nodes.Find(runVariables[0].Value, true)[0];
-                            varNode.Nodes.Add(runNode);
-                        }
-                        else
-                        {
-                            mainRunsNode.Nodes.Add(runNode);
-                        }
-                    }                   
-                }
+                    }
+                }             
 
-                categoryNode.Nodes.Add(mainLevelNode);
-                categoryNode.Nodes.Add(mainRunsNode);
-                mainCategoryNode.Nodes.Add(categoryNode);
+                if (categoryNode.Nodes.Find("Levels", true).Length > 0)
+                {
+                    mainLevelsNode.Nodes.Add(categoryNode);
+                }
+                else if(categoryNode.Nodes.Count > 0)
+                {
+                    mainCategoryNode.Nodes.Add(categoryNode);
+                }
             }
             gameNode.Nodes.Add(mainCategoryNode);
+            gameNode.Nodes.Add(mainLevelsNode);
 
-            MessageBox.Show("Number of runs found" + runCount);
-            return;
+            MessageBox.Show("Number of runs found: " + runCount);
+        }
 
-            //Searching for the category "Any%"
-            var noWarps = game.Categories.First(category => category.Name == "No Warps");
+        private TreeNode CreateRunNode(Run run)
+        {            
+            var webLinkNode = CreateNodeHelper(run.WebLink.ToString());
+            webLinkNode.Tag = "WebLink";
 
-            var noWarpsNeutral = noWarps.Variables.First(subCategory => subCategory.Values.First(subCat => subCat.Value == "Neutral").Value == "Neutral");
+            var playerName = (run.Player != null) ? run.Player.Name : "Player Name N/A";
 
-            var noWarpsNeutralBoards = client.Leaderboards.GetLeaderboardForFullGameCategory(noWarpsNeutral.GameID, noWarps.ID, top: 1);
-            //Finding the World Record of the category
-            //var worldRecord = noWarpsNeutral.Category.WorldRecord;
+            var nodeLabel = run.Times.Primary.ToString() + " by " + playerName + " on " + run.Platform.ToString();
 
-            //Printing the World Record's information
+            var runVariables = run.VariableValues.ToList().FindAll(v => v.Variable.IsSubcategory == false);
+
+            foreach(var variable in runVariables)
+            {
+                nodeLabel += " - " + variable.Value;
+            }
+
+            var node = new TreeNode(nodeLabel);
+            node.Nodes.Add(webLinkNode);
+
+            return node;
+        }
+
+        private void ManageCategoryRun(Run run, TreeNode categoryNode)
+        {
+            var subCategories = run.VariableValues.ToList().FindAll(v => v.Variable.IsSubcategory == true);
+            var runNode = CreateRunNode(run);
+
+            if (subCategories.Count > 0)
+            {
+                var varNodeToUse = new TreeNode();
+
+                var subCatTreeNodeQueue = new List<TreeNode>();
+                subCatTreeNodeQueue.Add(categoryNode);
+                //Make sure all nodes are made.
+                for (int i = 0; i < subCategories.Count; i++)
+                {
+                    if (subCatTreeNodeQueue[i].Nodes.Find(subCategories[i].Value, true).Length > 0)
+                    {
+                        subCatTreeNodeQueue.Add(subCatTreeNodeQueue[i].Nodes.Find(subCategories[i].Value, true)[0]);
+                    }
+                    else
+                    {
+                        //Create new sub category node
+                        var newSubCatNode = CreateNodeHelper(subCategories[i].Value);
+                        subCatTreeNodeQueue[i].Nodes.Add(newSubCatNode);
+                        subCatTreeNodeQueue.Add(newSubCatNode);
+                    }
+                }
+
+                //Attach the first sub cat to the category.  Secondary cats should already be attached with the code above.
+                //if (!(categoryNode.Nodes.Find(subCatTreeNodeQueue[1].Name, true).Length > 0))
+                //{
+                //    categoryNode.Nodes.Add(subCatTreeNodeQueue[1]);
+                //}
+
+                //get the last item in the list to attach the run to.
+                varNodeToUse = subCatTreeNodeQueue[subCatTreeNodeQueue.Count - 1];
+
+                varNodeToUse.Nodes.Add(runNode);
+            }
+            else
+            {
+                categoryNode.Nodes.Add(runNode);
+            }
+        }
+
+        private void ManageLevelRun(TreeNode mainLevelsNode, Run run)
+        {
+            var runNode = CreateRunNode(run);
+            var levelNode = new TreeNode();
+            var level = run.Level;
+            var isNewLevel = !(mainLevelsNode.Nodes.Find(level.Name, false).Length > 0);
+
+            if (isNewLevel)
+            {
+                levelNode.Text = level.Name;
+                levelNode.Name = level.Name;
+                mainLevelsNode.Nodes.Add(levelNode);
+            }
+            else
+            {
+                levelNode = mainLevelsNode.Nodes.Find(level.Name, false)[0];
+            }
+
+            var categoryNode = new TreeNode();
+            var categoryName = run.Category.ToString();
+            if (levelNode.Nodes.Find(categoryName, false).Length > 0)
+            {
+                categoryNode = levelNode.Nodes.Find(categoryName, false)[0];
+            }
+            else
+            {
+                categoryNode = CreateNodeHelper(categoryName);
+                levelNode.Nodes.Add(categoryNode);
+            }
+
+            categoryNode.Nodes.Add(runNode);
         }
 
         private void treeView1_NodeMouseDoubleClick(object sender, TreeNodeMouseClickEventArgs e)
