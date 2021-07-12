@@ -1,5 +1,6 @@
 # SRC-Game-Viewer
 Quick and dirty program that uses the C# API Interface for SRC to organize and few runs of a game on SRC
 
-A bit slow, probably due to not getting all the data before creating the items for the tree view.
-Still need to add a way to export a list with all of the run data that's excel safe.
+Slowness is likely due to how I am requesting SRC data. Probably could be faster if I use the wrapper API better.  At least I confirmed that it's not the creation of the GUI tree.
+
+It is now possible to export data to a .CSV file for use in Excel or Sheets.  Shouldn't be too hard to add other file types, but I will deal with that when needed.
