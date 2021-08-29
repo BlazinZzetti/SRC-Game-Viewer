@@ -30,6 +30,9 @@ namespace SRCTest
             public string video;
             public string srcLink;
             public string runStatus;
+            public string runSubmittedDate;
+            public string runVerifier;
+            public string runVerifiedDate;
         }
 
         List<RunData> Runs = new List<RunData>();
@@ -96,8 +99,14 @@ namespace SRCTest
             runData.primaryIsGameTime = run.Times.Primary == run.Times.GameTime;
             runData.platform = run.Platform.ToString();
             runData.date = run.Date.ToString();
+            runData.runSubmittedDate = run.DateSubmitted.ToString();
+            if (run.Status.Type != RunStatusType.New)
+            {
+                runData.runVerifier = run.Status.Examiner.ToString();
+                runData.runVerifiedDate = run.Status.VerifyDate.ToString();
+            }
 
-            if(run.Videos != null && run.Videos.Links.Count > 0)
+            if (run.Videos != null && run.Videos.Links.Count > 0)
             {
                 //This should be loop friendly for when I have time to work on this more.
                 if (run.Videos.Links[0] != null)
@@ -329,7 +338,10 @@ namespace SRCTest
                                 valueHeader += "Date,";
                                 valueHeader += "Video,";
                                 valueHeader += "SRC Link,";
-                                valueHeader += "Run Status";
+                                valueHeader += "Run Status,";
+                                valueHeader += "Run Submitted Date,";
+                                valueHeader += "Run Verified Date,";
+                                valueHeader += "Run Verifier";
 
                                 stream.WriteLine(valueHeader);
 
@@ -362,7 +374,10 @@ namespace SRCTest
                                     runDataString += run.date + ",";
                                     runDataString += run.video + ",";
                                     runDataString += run.srcLink + ",";
-                                    runDataString += run.runStatus;
+                                    runDataString += run.runStatus + ",";
+                                    runDataString += run.runSubmittedDate + ",";
+                                    runDataString += run.runVerifiedDate + ",";
+                                    runDataString += run.runVerifier;
 
                                     stream.WriteLine(runDataString);
                                 }
