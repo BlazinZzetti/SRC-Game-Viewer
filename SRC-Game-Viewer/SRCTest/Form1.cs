@@ -67,11 +67,16 @@ namespace SRCTest
                 foreach (var category in game.Categories)
                 {
                     Console.WriteLine(category.Name);
-
-                    foreach (var run in category.Runs)
-                    {
-                        Runs.Add(CreateRunData(run));
-                    }
+                    Task t = Task.Run(async delegate 
+                    { 
+                        foreach (var run in category.Runs)
+                        {
+                            Runs.Add(CreateRunData(run));
+                        }
+                        Console.WriteLine("Waiting...");
+                        await Task.Delay(new TimeSpan(0, 1, 10));
+                    });
+                    t.Wait();
                 }
 
                 CreateTree(game.Name, Runs);
